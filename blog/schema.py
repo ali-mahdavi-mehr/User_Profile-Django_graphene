@@ -1,5 +1,4 @@
 from django.db.models import Q
-from typing import Optional
 import graphene
 from graphene_django.types import DjangoObjectType, ObjectType
 from blog.models import Post
@@ -20,6 +19,30 @@ class PostType(DjangoObjectType):
         model= Post
 
 
+class PostInput(graphene.InputObjectType):
+    title = graphene.String(required=True)
+    slug = graphene.String(required=True)
+    tags = graphene.String()
+    content = graphene.String()
+
+class CreatePost(graphene.Mutation):
+    class Arguments:
+        input = PostInput()
+
+    post = graphene.Field(PostType)
+
+    def mutate(cls, info, input):
+        print(input)
+        print(info)
+        new_post = Post.objects.create(
+            title=input.title,
+            slug=input.slug,
+            creator=1,
+            tags = input.tags if hasattr(input, "tags") else None,
+            content= input.content if hasattr(input, "content") else None
+        )
+        return CreatePost(post=new_post)
+
 
 
 class Query(ObjectType):
@@ -28,12 +51,13 @@ class Query(ObjectType):
     filterd_posts = graphene.List(PostType, title=graphene.String(default_value=""))
 
 
+
     users = graphene.List(UserType) 
     user = graphene.Field(UserType, username=graphene.String())
 
 
 
-    def resolve_posts(root, **kwargs):
+    def resolve_posts(root, info, **kwargs):
         return Post.objects.all()
 
     def resolve_filterd_posts(root, info, title, **kwargs):
@@ -53,3 +77,6 @@ class Query(ObjectType):
         user = User.objects.get(username=username)
         return user
 
+
+class Mutate(graphene.ObjectType):
+    create_post = CreatePost.Field()
