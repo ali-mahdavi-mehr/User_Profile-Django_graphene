@@ -17,5 +17,9 @@ class Post(models.Model):
     def __str__(self) -> str:
         return self.title
 
+    def save(self, *args, **kwargs) -> None:
+        print("save prosees")
+        return super().save(*args, **kwargs)
+
 
 
